@@ -1,5 +1,5 @@
 from functools import partial
-from scipy.cluster.hierarchy import average, dendrogram, to_tree
+import scipy as sp
 from skbio import DistanceMatrix
 from skbio import DNA
 
@@ -12,6 +12,16 @@ def kmer_distance(sequence1, sequence2, k=7, overlap=False):
     number_unique = len(all_kmers) - len(shared_kmers)
     fraction_unique = number_unique / len(all_kmers)
     return fraction_unique
+
+
+def guide_tree_from_sequences(sequences, metric=kmer_distance, display_tree=False):
+    guide_dm = DistanceMatrix.from_iterable(sequences, metric=metric, key='id')
+    guide_lm = sp.cluster.hierarchy.average(guide_dm.condensed_form())
+    guide_tree = sp.cluster.hierarchy.to_tree(guide_lm)
+    if display_tree:
+        sp.cluster.hierarchy.dendrogram(
+            guide_lm, labels=guide_dm.ids, orientation='right', link_color_func=lambda x: 'black')
+    return guide_tree
 
 
 filenames = [
@@ -63,11 +73,4 @@ query_of_sequences = [DNA(BrownRat, {"id": "s1"}),
                       DNA(HumanA, {"id": "s4"})
                       ]
 
-guide_dm = DistanceMatrix.from_iterable(query_of_sequences, metric=kmer_distance, key='id')
-
-guide_lm = average(guide_dm.condensed_form()) # upgma
-print(guide_dm)
-guide_d = dendrogram(guide_lm, labels=guide_dm.ids, orientation='right',link_color_func=lambda x: 'black')
-print(guide_d)
-guide_tree = to_tree(guide_lm)
-print(guide_tree)
+t = guide_tree_from_sequences(query_of_sequences, display_tree=True)
