@@ -38,7 +38,7 @@ def alignement_score_distance(sequence1,sequence2):
     return score
 
 
-def guide_tree_from_sequences(sequences, metric=hamming_distance):
+def example_guide_tree_generation(sequences, metric=hamming_distance):
         guide_dm = DistanceMatrix.from_iterable(sequences, metric=metric, key='id')
         print(guide_dm)
         guide_lm = sp.cluster.hierarchy.average(guide_dm.condensed_form())
