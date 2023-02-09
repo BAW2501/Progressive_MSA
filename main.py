@@ -1,4 +1,5 @@
 from progressive_align import *
+
 # just an example guide tree for testing
 
 def example_guide_tree_generation(sequences, metric=hamming_distance):
@@ -22,8 +23,10 @@ if "__main__" == __name__:
     guide_tree4 = example_guide_tree_generation(query_of_sequences,metric=alignement_score_distance)
     # global_pairwise_align_nucleotide this function is faster than our TP implementation and works with profiles
     # but it's not nearly as fast as we need it to be( dies at length 1000+ sequences)
+    # TODO: supress the warnings
     # TODO: Faster Aligner ( preferably with C and bindings to python )
     aligner = partial(global_pairwise_align_nucleotide,match_score = 6,mismatch_score = -2, gap_open_penalty=4, gap_extend_penalty=1)
     # you can use any of the guide trees above
     MSA = progressive_msa(query_of_sequences, pairwise_aligner=aligner,guide_tree=guide_tree4)
     print(MSA)
+    MSA.write("MSA.fasta",format="fasta")

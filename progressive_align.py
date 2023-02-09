@@ -60,10 +60,8 @@ def progressive_msa(sequences, pairwise_aligner, guide_tree=None, metric=kmer_di
 
     seq_lookup = {s.metadata['id']: s for i, s in enumerate(sequences)}
     c1, c2 = guide_tree.children
-    c1_aln = seq_lookup[c1.name] if c1.is_tip() else progressive_msa(
-        sequences, pairwise_aligner, c1)
-    c2_aln = seq_lookup[c2.name] if c2.is_tip() else progressive_msa(
-        sequences, pairwise_aligner, c2)
+    c1_aln = seq_lookup[c1.name] if c1.is_tip() else progressive_msa(sequences, pairwise_aligner, c1)
+    c2_aln = seq_lookup[c2.name] if c2.is_tip() else progressive_msa(sequences, pairwise_aligner, c2)
 
     alignment, _, _ = pairwise_aligner(c1_aln, c2_aln)
 
