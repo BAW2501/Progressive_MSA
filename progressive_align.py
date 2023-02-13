@@ -53,12 +53,11 @@ def example_guide_tree_generation(sequences, metric=hamming_distance):
 def progressive_msa(sequences, pairwise_aligner, guide_tree=None, metric=kmer_distance):
 
     if guide_tree is None:
-        guide_dm = DistanceMatrix.from_iterable(
-            sequences, metric=metric, key='id')
+        guide_dm = DistanceMatrix.from_iterable(sequences, metric=metric, key='id')
         guide_lm = sp.cluster.hierarchy.average(guide_dm.condensed_form())
         guide_tree = TreeNode.from_linkage_matrix(guide_lm, guide_dm.ids)
 
-    seq_lookup = {s.metadata['id']: s for i, s in enumerate(sequences)}
+    seq_lookup = {s.metadata['id']: s for s in sequences}
     c1, c2 = guide_tree.children
     c1_aln = seq_lookup[c1.name] if c1.is_tip() else progressive_msa(sequences, pairwise_aligner, c1)
     c2_aln = seq_lookup[c2.name] if c2.is_tip() else progressive_msa(sequences, pairwise_aligner, c2)
