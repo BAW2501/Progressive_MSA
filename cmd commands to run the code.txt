@@ -1,1 +1,5 @@
+for reading unaligned sequences and aligining them:
 python read_sequences.py "C:\Users\Oussama\Desktop\oxbench_1_3(1)\oxbench_1_3\data\full.id" "C:\Users\Oussama\Desktop\oxbench_1_3(1)\oxbench_1_3\data\fasta\master"
+
+for reading alignments:
+python read_alignments.py "C:\Users\Oussama\Desktop\oxbench_1_3\oxbench_1_3\data\full.id" "C:\Users\Oussama\Desktop\oxbench_1_3\oxbench_1_3\data\align\fasta"
