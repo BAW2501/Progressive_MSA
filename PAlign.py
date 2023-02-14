@@ -30,15 +30,13 @@ def get_linkage_matrix(children, distances, n_samples):
     '''
     Create linkage matrix (scipy format) from children and distances.
     '''
-    
+
     # Create linkage matrix and return it
     # create the counts of samples under each node
     counts = np.zeros(children.shape[0])
     for i, merge in enumerate(children):
-        counts[i] = sum(1 if child_idx < n_samples else counts[child_idx - n_samples]
-                        for child_idx in merge)
-    linkage_matrix = np.column_stack(
-        [children, distances, counts]).astype(float)
+        counts[i] = sum(1 if child_idx < n_samples else counts[child_idx - n_samples]for child_idx in merge)
+    linkage_matrix = np.column_stack([children, distances, counts]).astype(float)
     return linkage_matrix
 
 
@@ -64,6 +62,7 @@ class DnaMSA:
         lm = get_linkage_matrix(children, distances, n_samples)
         gt = TreeNode.from_linkage_matrix(lm, self.ids)
         return gt
+
     def generate_guidtree_ward(self):
         '''
         Generate guide tree using Ward's method.
@@ -104,8 +103,6 @@ class RnaMSA(DnaMSA):
         super().__init__(sequences, clustering_algo)
         self.alphabet = list('ACGU')
 
-
-# inherit from dnaMSA to make ProteinMSA by changing alphabet and modifying progressive_msa method, to use global_pairwise_align_protein
 
 class ProteinMSA(DnaMSA):
     def __init__(self, sequences, clustering_algo='Aglo') -> None:
