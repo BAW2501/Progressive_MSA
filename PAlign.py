@@ -1,10 +1,12 @@
 import numpy as np
+import warnings
 from functools import partial
 from sklearn.cluster import AgglomerativeClustering, ward_tree
 from skbio import TreeNode , DNA, RNA, Protein
 from skbio.alignment import global_pairwise_align_nucleotide, global_pairwise_align_protein
 
 
+warnings.filterwarnings('ignore',message="You're using skbio's python implementation of Needleman-Wunsch ")
 def progressive_msa_func(sequences, pairwise_aligner, guide_tree):
     '''
     Perform progressive multiple sequence alignment using the guide tree.
