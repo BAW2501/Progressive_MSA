@@ -2,6 +2,7 @@ import numpy as np
 import warnings
 from functools import partial
 from sklearn.cluster import AgglomerativeClustering, ward_tree
+from hdbscan import HDBSCAN
 from skbio import TreeNode , DNA, RNA, Protein
 from skbio.alignment import global_pairwise_align_nucleotide, global_pairwise_align_protein
 
@@ -58,8 +59,7 @@ class DnaMSA:
         Generate guide tree using agglomerative clustering.
         '''
         onehot_sequences_flat = self.one_hot_sequences()
-        model = AgglomerativeClustering(
-            distance_threshold=0, n_clusters=None).fit(onehot_sequences_flat)
+        model = AgglomerativeClustering(distance_threshold=0, n_clusters=None).fit(onehot_sequences_flat)
         children = model.children_
         distances = model.distances_
         n_samples = len(model.labels_)
@@ -74,6 +74,17 @@ class DnaMSA:
         onehot_sequences_flat = self.one_hot_sequences()
         children, _, _, _, distances = ward_tree(onehot_sequences_flat)
         lm = get_linkage_matrix(children, distances, self.n_sequences)
+        gt = TreeNode.from_linkage_matrix(lm, self.ids)
+        return gt
+    
+    def generate_guidetree_hdbscan(self):
+        '''
+        Generate guide tree using HDBSCAN.
+        '''
+        onehot_sequences_flat = self.one_hot_sequences()
+        model = HDBSCAN(min_cluster_size=2, metric='euclidean', cluster_selection_method='eom')
+        clusterer = model.fit(onehot_sequences_flat)
+        lm = clusterer.single_linkage_tree_.to_numpy()
         gt = TreeNode.from_linkage_matrix(lm, self.ids)
         return gt
 
@@ -95,6 +106,8 @@ class DnaMSA:
             gt = self.generate_guidetree_aglo()
         elif self.cluster_algo_to_use == 'Ward':
             gt = self.generate_guidetree_ward()
+        elif self.cluster_algo_to_use == 'HDBSCAN':
+            gt = self.generate_guidetree_hdbscan()
         else:
             raise ValueError('Invalid clustering algorithm')
         return progressive_msa_func(self.sequences, self.pair_aligner, gt)
