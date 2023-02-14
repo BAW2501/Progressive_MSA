@@ -6,6 +6,7 @@ from skbio import TreeNode , DNA, RNA, Protein
 from skbio.alignment import global_pairwise_align_nucleotide, global_pairwise_align_protein
 
 
+
 warnings.filterwarnings('ignore',message="You're using skbio's python implementation of Needleman-Wunsch ")
 def progressive_msa_func(sequences, pairwise_aligner, guide_tree):
     '''
@@ -66,7 +67,7 @@ class DnaMSA:
         gt = TreeNode.from_linkage_matrix(lm, self.ids)
         return gt
 
-    def generate_guidtree_ward(self):
+    def generate_guidetree_ward(self):
         '''
         Generate guide tree using Ward's method.
         '''
@@ -93,7 +94,7 @@ class DnaMSA:
         if self.cluster_algo_to_use == 'Aglo':
             gt = self.generate_guidetree_aglo()
         elif self.cluster_algo_to_use == 'Ward':
-            gt = self.generate_guidtree_ward()
+            gt = self.generate_guidetree_ward()
         else:
             raise ValueError('Invalid clustering algorithm')
         return progressive_msa_func(self.sequences, self.pair_aligner, gt)
