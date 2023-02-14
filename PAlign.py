@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering, ward_tree
-from skbio import TreeNode
+from skbio import TreeNode , DNA, RNA, Protein
 from skbio.alignment import global_pairwise_align_nucleotide, global_pairwise_align_protein
 
 
@@ -109,3 +109,50 @@ class ProteinMSA(DnaMSA):
         super().__init__(sequences, clustering_algo)
         self.alphabet = list('ACDEFGHIKLMNPQRSTVWY')
         self.pair_aligner = global_pairwise_align_protein
+
+if __name__ == '__main__':
+    # DNA test
+    X = [
+    'ACGCGATGACCGGGCCTTGTATT',
+    'ATGATGACAGGGCTTGTAACT',
+    'TTCATGACCGGCTTATACTTA',
+    'ACGCGATGACCGGGCCTTGTA',
+    'ATGATGACAGGGCTTGTAACT',
+    'TTCATGACCGGCTTATACTTA',
+    'CGTTGCCGTTACATTTAAGGC',
+    'GCAGGCGTTTACTTACGCAGT',
+    'TCGTTAGCCTGGTTTTTACCC',
+    'AACGCAGGTTAGTGGTACGTT',
+    'CTGCCGTGTATTTCACAGGAC',
+    'GAGCGGCTCACGGGTTTGGTT',
+    'TTAGCCGAGTTTTAGTTTCCG'
+    ]
+    sequences = list(map(DNA,X))
+
+    for i,seq in enumerate(sequences):
+        seq.metadata['id'] = i
+    msa_aligner = DnaMSA(sequences)
+    result = msa_aligner.progressive_msa()
+    print(result)
+    # RNA test
+    rna_X = [seq.replace('T', 'U') for seq in X]
+    sequences = list(map(RNA,rna_X))
+
+    for i,seq in enumerate(sequences):
+        seq.metadata['id'] = i
+    msa_aligner = RnaMSA(sequences)
+    result = msa_aligner.progressive_msa()
+    print(result)
+    # Protein test
+    X = [
+     'DVVMTQTPLSLPVSLGDQASISCRSSQSLVHSNG',
+     'SLPVSLGDQSISCRSSQSLVHSNGNTYLHWYLQKPG',
+     'TILDMDVVEGSAARFDCKVEGYPDPE',
+     'DVVMQTPLSLPVLGNTYLYWYLQKPG']
+    sequences = list(map(Protein,X))
+
+    for i,seq in enumerate(sequences):
+        seq.metadata['id'] = i
+    msa_aligner = ProteinMSA(sequences)
+    result = msa_aligner.progressive_msa()
+    print(result)
