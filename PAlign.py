@@ -5,6 +5,9 @@ from skbio.alignment import global_pairwise_align_nucleotide, global_pairwise_al
 
 
 def progressive_msa_func(sequences, pairwise_aligner, guide_tree):
+    '''
+    Perform progressive multiple sequence alignment using the guide tree.
+    '''
 
     seq_lookup = {s.metadata['id']: s for s in sequences}
     c1, c2 = guide_tree.children
@@ -24,8 +27,11 @@ def progressive_msa_func(sequences, pairwise_aligner, guide_tree):
 
 
 def get_linkage_matrix(children, distances, n_samples):
-    # sourcery skip: inline-immediately-returned-variable
-    # Create linkage matrix and then plot the dendrogram
+    '''
+    Create linkage matrix (scipy format) from children and distances.
+    '''
+    
+    # Create linkage matrix and return it
     # create the counts of samples under each node
     counts = np.zeros(children.shape[0])
     for i, merge in enumerate(children):
@@ -46,6 +52,9 @@ class DnaMSA:
         self.pair_aligner = global_pairwise_align_nucleotide
 
     def generate_guidetree_aglo(self):
+        '''
+        Generate guide tree using agglomerative clustering.
+        '''
         onehot_sequences_flat = self.one_hot_sequences()
         model = AgglomerativeClustering(
             distance_threshold=0, n_clusters=None).fit(onehot_sequences_flat)
@@ -55,6 +64,9 @@ class DnaMSA:
         return get_linkage_matrix(children, distances, n_samples)
 
     def generate_guidtree_ward(self):
+        '''
+        Generate guide tree using Ward's method.
+        '''
 
         onehot_sequences_flat = self.one_hot_sequences()
         children, _, _, _, distances = ward_tree(onehot_sequences_flat)
