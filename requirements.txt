@@ -1,2 +1,4 @@
+numpy
 scikit-bio
-scipy
+scikit-learn
+hdbscan
