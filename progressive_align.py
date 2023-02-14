@@ -1,4 +1,3 @@
-from functools import partial
 import scipy as sp
 import numpy as np
 from skbio import DNA, TabularMSA, TreeNode, DistanceMatrix, Sequence
