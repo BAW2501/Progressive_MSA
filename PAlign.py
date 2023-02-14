@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering,ward_tree
-from skbio import DNA, Protein, TreeNode
-from skbio.alignment import global_pairwise_align_nucleotide,glocal_pairwise_align_protein
+from skbio import TreeNode
+from skbio.alignment import global_pairwise_align_nucleotide,global_pairwise_align_protein
 
 
 def get_linkage_matrix(children, distances, n_samples):
@@ -21,12 +21,10 @@ class DnaMSA:
         self.ids = [x.metadata['id'] for x in sequences]
         self.n_sequences = len(sequences)
         self.cluster_algo_to_use = clustering_algo
+        self.pair_aligner = global_pairwise_align_nucleotide
 
     def generate_guidetree_aglo(self):
-        max_len = max(len(seq) for seq in self.sequences)
-        padded_sequences = np.array([list(str(x) + '_' * (max_len - len(x))) for x in self.sequences])
-        onehot_sequences = np.array([[1 if x == y else 0 for x in self.alphabet] for y in padded_sequences.flatten()])
-        onehot_sequences_flat = onehot_sequences.reshape((self.n_sequences, max_len * 4))
+        onehot_sequences_flat = self.one_hot_sequences()
         model = AgglomerativeClustering(distance_threshold=0, n_clusters=None).fit(onehot_sequences_flat)
         children = model.children_
         distances = model.distances_
@@ -35,15 +33,23 @@ class DnaMSA:
     
     def generate_guidtree_ward(self):
 
-        max_len = max(len(seq) for seq in self.sequences)
-        padded_sequences = np.array([list(str(x) + '_' * (max_len - len(x))) for x in self.sequences])
-        onehot_sequences = np.array([[1 if x == y else 0 for x in self.alphabet] for y in padded_sequences.flatten()])
-        onehot_sequences_flat = onehot_sequences.reshape((self.n_sequences, max_len * 4))
+        onehot_sequences_flat = self.one_hot_sequences()
         children,_,_,_,distances  = ward_tree(onehot_sequences_flat)
         return get_linkage_matrix(children, distances, self.n_sequences)
+
+    def one_hot_sequences(self):
+        max_len = max(len(seq) for seq in self.sequences)
+        padded_sequences = np.array([list(str(x) + '_' * (max_len - len(x))) for x in self.sequences])
+        onehot_sequences = np.array(
+            [
+                [1 if x == y else 0 for x in self.alphabet]
+                for y in padded_sequences.flatten()
+            ]
+        )
+        return onehot_sequences.reshape((self.n_sequences, max_len * 4))
     
     
-    def progressive_msa(self, pairwise_aligner=global_pairwise_align_nucleotide):
+    def progressive_msa(self):
 
         if self.n_sequences == 1:
             return self.sequences[0]
@@ -54,10 +60,10 @@ class DnaMSA:
 
         seq_lookup = {s.metadata['id']: s for s in self.sequences}
         c1, c2 = guide_tree.children
-        c1_aln = seq_lookup[c1.name] if c1.is_tip() else self.progressive_msa(self.sequences, pairwise_aligner, c1)
-        c2_aln = seq_lookup[c2.name] if c2.is_tip() else self.progressive_msa(self.sequences, pairwise_aligner, c2)
+        c1_aln = seq_lookup[c1.name] if c1.is_tip() else self.progressive_msa(self.sequences, self.pair_aligner, c1)
+        c2_aln = seq_lookup[c2.name] if c2.is_tip() else self.progressive_msa(self.sequences, self.pair_aligner, c2)
 
-        alignment, _, _ = pairwise_aligner(c1_aln, c2_aln)
+        alignment, _, _ = self.pair_aligner(c1_aln, c2_aln)
 
         return alignment
     
@@ -67,3 +73,12 @@ class RnaMSA(DnaMSA):
     def __init__(self, sequences, clustering_algo='Aglo') -> None:
         super().__init__(sequences, clustering_algo)
         self.alphabet = list('ACGU')
+
+
+# inherit from dnaMSA to make ProteinMSA by changing alphabet and modifying progressive_msa method, to use global_pairwise_align_protein
+
+class ProteinMSA(DnaMSA):
+    def __init__(self, sequences, clustering_algo='Aglo') -> None:
+        super().__init__(sequences, clustering_algo)
+        self.alphabet = list('lfjqmfjqmfljqmfjqmfq')
+        self.pair_aligner = global_pairwise_align_protein
