@@ -1,4 +1,5 @@
 import numpy as np
+from functools import partial
 from sklearn.cluster import AgglomerativeClustering, ward_tree
 from skbio import TreeNode , DNA, RNA, Protein
 from skbio.alignment import global_pairwise_align_nucleotide, global_pairwise_align_protein
@@ -47,7 +48,7 @@ class DnaMSA:
         self.ids = [x.metadata['id'] for x in sequences]
         self.n_sequences = len(sequences)
         self.cluster_algo_to_use = clustering_algo
-        self.pair_aligner = global_pairwise_align_nucleotide
+        self.pair_aligner = partial(global_pairwise_align_nucleotide,match_score = 6,mismatch_score = -2, gap_open_penalty=4, gap_extend_penalty=1)
 
     def generate_guidetree_aglo(self):
         '''
