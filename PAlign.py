@@ -61,16 +61,18 @@ class DnaMSA:
         children = model.children_
         distances = model.distances_
         n_samples = len(model.labels_)
-        return get_linkage_matrix(children, distances, n_samples)
-
+        lm = get_linkage_matrix(children, distances, n_samples)
+        gt = TreeNode.from_linkage_matrix(lm, self.ids)
+        return gt
     def generate_guidtree_ward(self):
         '''
         Generate guide tree using Ward's method.
         '''
-
         onehot_sequences_flat = self.one_hot_sequences()
         children, _, _, _, distances = ward_tree(onehot_sequences_flat)
-        return get_linkage_matrix(children, distances, self.n_sequences)
+        lm = get_linkage_matrix(children, distances, self.n_sequences)
+        gt = TreeNode.from_linkage_matrix(lm, self.ids)
+        return gt
 
     def one_hot_sequences(self):
         max_len = max(len(seq) for seq in self.sequences)
@@ -87,11 +89,9 @@ class DnaMSA:
     def progressive_msa(self):
 
         if self.cluster_algo_to_use == 'Aglo':
-            linkage_matrix = self.generate_guidetree_aglo()
-            gt = TreeNode.from_linkage_matrix(linkage_matrix, self.ids)
+            gt = self.generate_guidetree_aglo()
         elif self.cluster_algo_to_use == 'Ward':
-            linkage_matrix = self.generate_guidtree_ward()
-            gt = TreeNode.from_linkage_matrix(linkage_matrix, self.ids)
+            gt = self.generate_guidtree_ward()
         else:
             raise ValueError('Invalid clustering algorithm')
         return progressive_msa_func(self.sequences, self.pair_aligner, gt)
