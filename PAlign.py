@@ -3,8 +3,10 @@ import warnings
 from functools import partial
 from sklearn.cluster import AgglomerativeClustering, ward_tree
 from hdbscan import HDBSCAN
+from pathlib import Path
 from skbio import TreeNode , DNA, RNA, Protein
 from skbio.alignment import global_pairwise_align_nucleotide, global_pairwise_align_protein
+from tqdm import tqdm
 
 
 
@@ -126,23 +128,50 @@ class ProteinMSA(DnaMSA):
         super().__init__(sequences, clustering_algo)
         self.alphabet = list('ACDEFGHIKLMNPQRSTVWY')
         self.pair_aligner = global_pairwise_align_protein
-# sequence factory s a convinience class to generate DnaMSA, RnaMSA and ProteinMSA objects with 
-# it has no constructor and only static methods
-# first method is to initialize a an msa object from two lists of sequences and ids 
-# given the type of msa and the clustering algorithm to use
+
 class SequenceFactory:
+    '''
+    helper class to create MSA objects
+    '''
     classes = {'DNA': DnaMSA, 'RNA': RnaMSA, 'Protein': ProteinMSA}
-    sequence_types = ['DNA': DNA, 'RNA':RNA, 'Protein':Protein]
-    @staticmethod
-    def init_msa_object_from_strings(sequences, ids, msa_type, clustering_algo):
-        if msa_type not in SequenceFactory.classes:
+    sequence_types = {'DNA': DNA, 'RNA':RNA, 'Protein':Protein}
+    # i should remove some cause they aren't sequence filetypes
+
+    supported_file_types = [
+        'gff3' ,
+        'fasta' ,
+        'qseq' ,
+        'fastq' ,
+        'embl' ,
+        'genbank'
+        ]
+    def __init__(self,msa_type,clustering_algo):
+        self.msa_type = msa_type
+        self.clustering_algo = clustering_algo
+    
+    def init_msa_object_from_strings(self,sequences, ids):
+        if self.msa_type not in SequenceFactory.classes:
             raise ValueError('Invalid MSA type')
-        class_constructor = SequenceFactory.classes[msa_type]
-        sequence_constructor = SequenceFactory.sequence_types[msa_type]
+        class_constructor = SequenceFactory.classes[self.msa_type]
+        sequence_constructor = SequenceFactory.sequence_types[self.msa_type]
         seqs = [sequence_constructor(x, metadata={'id': y}) for x, y in zip(sequences, ids)]
-        return class_constructor(seqs, clustering_algo)
-    #@staticmethod
-    #def init_msa_object_from_file(file_path,file_type, msa_type, clustering_algo):
+        return class_constructor(seqs, self.clustering_algo)
+    
+    # def init_msa_object_from_file(self,files_path,file_type):
+    #     if file_type not in SequenceFactory.supported_file_types:
+    #         raise ValueError('Invalid file type')
+    #     if self.msa_type not in SequenceFactory.classes:
+    #         raise ValueError('Invalid MSA type')
+        
+    #     class_constructor = SequenceFactory.classes[self.msa_type]
+    #     sequence_constructor = SequenceFactory.sequence_types[self.msa_type]
+    #     seqs = []
+    #     files  = list(Path(files_path).iterdir())
+    #     for file_path in tqdm(files):
+
+
+
+
         
 
 
