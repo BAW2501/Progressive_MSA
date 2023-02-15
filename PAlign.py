@@ -126,6 +126,25 @@ class ProteinMSA(DnaMSA):
         super().__init__(sequences, clustering_algo)
         self.alphabet = list('ACDEFGHIKLMNPQRSTVWY')
         self.pair_aligner = global_pairwise_align_protein
+# sequence factory s a convinience class to generate DnaMSA, RnaMSA and ProteinMSA objects with 
+# it has no constructor and only static methods
+# first method is to initialize a an msa object from two lists of sequences and ids 
+# given the type of msa and the clustering algorithm to use
+class SequenceFactory:
+    classes = {'DNA': DnaMSA, 'RNA': RnaMSA, 'Protein': ProteinMSA}
+    sequence_types = ['DNA': DNA, 'RNA':RNA, 'Protein':Protein]
+    @staticmethod
+    def init_msa_object_from_strings(sequences, ids, msa_type, clustering_algo):
+        if msa_type not in SequenceFactory.classes:
+            raise ValueError('Invalid MSA type')
+        class_constructor = SequenceFactory.classes[msa_type]
+        sequence_constructor = SequenceFactory.sequence_types[msa_type]
+        seqs = [sequence_constructor(x, metadata={'id': y}) for x, y in zip(sequences, ids)]
+        return class_constructor(seqs, clustering_algo)
+    #@staticmethod
+    #def init_msa_object_from_file(file_path,file_type, msa_type, clustering_algo):
+        
+
 
 if __name__ == '__main__':
     # DNA test
