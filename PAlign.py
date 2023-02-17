@@ -212,3 +212,9 @@ if __name__ == '__main__':
     msa_aligner = factory.init_msa_object_from_strings(X,range(len(X)))
     result = msa_aligner.progressive_msa()
     print(result)
+    # read from file
+    factory = SequenceFactory('Protein','Aglo')
+    msa_aligner = factory.init_msa_object_from_file(r'Oxbench_input\12.fa','fasta')
+    for seq in msa_aligner.sequences:
+        print(seq)
+
