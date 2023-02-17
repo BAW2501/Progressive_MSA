@@ -2,3 +2,4 @@ numpy
 scikit-bio
 scikit-learn
 hdbscan
+blosum
