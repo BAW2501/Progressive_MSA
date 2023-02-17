@@ -4,7 +4,7 @@ from functools import partial
 from sklearn.cluster import AgglomerativeClustering, ward_tree
 from hdbscan import HDBSCAN
 from pathlib import Path
-from skbio import TreeNode , DNA, RNA, Protein
+from skbio import TreeNode , DNA, RNA, Protein ,io
 from skbio.alignment import global_pairwise_align_nucleotide, global_pairwise_align_protein
 from tqdm import tqdm
 
@@ -157,17 +157,17 @@ class SequenceFactory:
         seqs = [sequence_constructor(x, metadata={'id': y}) for x, y in zip(sequences, ids)]
         return class_constructor(seqs, self.clustering_algo)
     
-    # def init_msa_object_from_file(self,files_path,file_type):
-    #     if file_type not in SequenceFactory.supported_file_types:
-    #         raise ValueError('Invalid file type')
-    #     if self.msa_type not in SequenceFactory.classes:
-    #         raise ValueError('Invalid MSA type')
+    def init_msa_object_from_file(self,file_path,file_type):
+        if file_type not in SequenceFactory.supported_file_types:
+            raise ValueError('Invalid file type')
+        if self.msa_type not in SequenceFactory.classes:
+            raise ValueError('Invalid MSA type')
         
-    #     class_constructor = SequenceFactory.classes[self.msa_type]
-    #     sequence_constructor = SequenceFactory.sequence_types[self.msa_type]
-    #     seqs = []
-    #     files  = list(Path(files_path).iterdir())
-    #     for file_path in tqdm(files):
+        class_constructor = SequenceFactory.classes[self.msa_type]
+        sequence_constructor = SequenceFactory.sequence_types[self.msa_type]
+        seqs = list(map(sequence_constructor,list(io.read(file_path, format = file_type))))
+        return class_constructor(seqs, self.clustering_algo)
+            
 
 
 
