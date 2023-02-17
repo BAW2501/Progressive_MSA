@@ -4,9 +4,10 @@ from functools import partial
 from sklearn.cluster import AgglomerativeClustering, ward_tree
 from hdbscan import HDBSCAN
 from pathlib import Path
-from skbio import TreeNode , DNA, RNA, Protein ,io
+from skbio import TreeNode , DNA, RNA, Protein ,io,DistanceMatrix
 from skbio.alignment import global_pairwise_align_nucleotide, global_pairwise_align_protein
-from tqdm import tqdm
+from skbio.sequence.distance import kmer_distance
+from sklearn.manifold import MDS
 
 
 
@@ -99,6 +100,17 @@ class DnaMSA:
             ]
         )
         return onehot_sequences.reshape((self.n_sequences, max_len * len(self.alphabet)))
+    
+    def embed_sequences(self):
+        '''
+        Embed sequences using sklearn manifold MDS.
+        '''
+        distance_matrix = DistanceMatrix.from_iterable(self.sequences, metric=kmer_distance,key='id')
+        embedder = MDS(n_components=2, dissimilarity='precomputed',max_iter=3000, eps=1e-9, n_jobs=-1)
+        embedded = embedder.fit_transform(distance_matrix.data)
+        return embedded.embedding_
+
+       
 
     def progressive_msa(self,preprocess = 'one_hot'):
 
