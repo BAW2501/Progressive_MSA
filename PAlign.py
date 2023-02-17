@@ -56,12 +56,12 @@ class DnaMSA:
         self.cluster_algo_to_use = clustering_algo
         self.pair_aligner = partial(global_pairwise_align_nucleotide,match_score = 6,mismatch_score = -2, gap_open_penalty=4, gap_extend_penalty=1)
 
-    def generate_guidetree_aglo(self):
+    def generate_guidetree_aglo(self,numerical_representation):
         '''
         Generate guide tree using agglomerative clustering.
         '''
-        onehot_sequences_flat = self.one_hot_sequences()
-        model = AgglomerativeClustering(distance_threshold=0, n_clusters=None).fit(onehot_sequences_flat)
+        numerical_representation = self.one_hot_sequences()
+        model = AgglomerativeClustering(distance_threshold=0, n_clusters=None).fit(numerical_representation)
         children = model.children_
         distances = model.distances_
         n_samples = len(model.labels_)
@@ -69,23 +69,21 @@ class DnaMSA:
         gt = TreeNode.from_linkage_matrix(lm, self.ids)
         return gt
 
-    def generate_guidetree_ward(self):
+    def generate_guidetree_ward(self,numerical_representation):
         '''
         Generate guide tree using Ward's method.
         '''
-        onehot_sequences_flat = self.one_hot_sequences()
-        children, _, _, _, distances = ward_tree(onehot_sequences_flat)
+        children, _, _, _, distances = ward_tree(numerical_representation)
         lm = get_linkage_matrix(children, distances, self.n_sequences)
         gt = TreeNode.from_linkage_matrix(lm, self.ids)
         return gt
     
-    def generate_guidetree_hdbscan(self):
+    def generate_guidetree_hdbscan(self,numerical_representation):
         '''
         Generate guide tree using HDBSCAN.
         '''
-        onehot_sequences_flat = self.one_hot_sequences()
         model = HDBSCAN(min_cluster_size=2, metric='euclidean', cluster_selection_method='eom')
-        clusterer = model.fit(onehot_sequences_flat)
+        clusterer = model.fit(numerical_representation)
         lm = clusterer.single_linkage_tree_.to_numpy()
         gt = TreeNode.from_linkage_matrix(lm, self.ids)
         return gt
@@ -102,14 +100,21 @@ class DnaMSA:
         )
         return onehot_sequences.reshape((self.n_sequences, max_len * len(self.alphabet)))
 
-    def progressive_msa(self):
+    def progressive_msa(self,preprocess = 'one_hot'):
+
+        if preprocess == 'one_hot':
+            data = self.one_hot_sequences()
+        elif preprocess == 'embedding':
+            data = self.embed_sequences()
+        else:
+            raise ValueError('Invalid preprocessing method')
 
         if self.cluster_algo_to_use == 'Aglo':
-            gt = self.generate_guidetree_aglo()
+            gt = self.generate_guidetree_aglo(data)
         elif self.cluster_algo_to_use == 'Ward':
-            gt = self.generate_guidetree_ward()
+            gt = self.generate_guidetree_ward(data)
         elif self.cluster_algo_to_use == 'HDBSCAN':
-            gt = self.generate_guidetree_hdbscan()
+            gt = self.generate_guidetree_hdbscan(data)
         else:
             raise ValueError('Invalid clustering algorithm')
         return progressive_msa_func(self.sequences, self.pair_aligner, gt)
