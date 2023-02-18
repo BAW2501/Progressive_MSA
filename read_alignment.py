@@ -35,18 +35,31 @@ def stub_func(string):
 def compute_score_pairwise_alignment(seq1, seq2, score_matrix_dict):
     score=0
     for residue_pair in list(zip(seq1, seq2)):
-        score+=score_matrix_dict[residue_pair[0]][residue_pair[1]]
+        residue1=residue_pair[0].__str__()
+        residue2=residue_pair[1].__str__()
+
+        # blosum matrices in the blosum modules read gaps as '*' instead of '-'
+        if(residue1=='-'):
+            residue1='*'
+
+        if(residue2=='-'):
+            residue2='*'
+
+        # add cost of substuting residue 1 with 2
+        score+=score_matrix_dict[residue1+residue2]
     return score
 
 def sum_pairs_score(msa, scoringMatrix):
     score=0
     #get number of blossum matrix
     match= re.search("blossum(.*)", scoringMatrix).group(1)
-    score_matrix_dict=bl.BLOSUM(match)
+    score_matrix_dict=bl.BLOSUM(int(match))
     pairwise_combinations = itertools.combinations(msa, 2)
-
+    
     for pair in pairwise_combinations:
         score+= compute_score_pairwise_alignment(pair[0], pair[1], score_matrix_dict)
+
+    return score
 
 ## TODO test sum_pairs_score function
 ## TODO implement circular sum
@@ -86,15 +99,19 @@ if __name__ == '__main__':
     'GAGCGGCTCACGGGTTTGGTT',
     'TTAGCCGAGTTTTAGTTTCCG'
     ]
-    sequences = list(map(DNA,X))
+
+    ## small Protein test
+    Y=[
+        'ATLKEKLIAPVAQQETTIPDNKITVVGVGQVGMACAISILGKSLTDELALVDVLEDKLKGEMMDLQHGSLFLQTPKIVANKDYSVTANSKIVVVTAGVRQQEGESRLNLVQRNVNVFKFIIPQIVKYSPNCIIIVVSNPVDILTYVAWKLSGLPKHRVIG',
+        'TALKDKLIGHLATSQEPRSYNKITVVGCDAVGMADAISVLMKDLADEVALVDVMEDKLKGEMMDLEHGSLFLHTAKIVSGKDYSVSAGSKLVVITAGARQQEGESRLNLVQRNVNIFKFIIPNIVKHSPDCLKELHPELGTDKNKQDWKLSGLPMHRIIGSG',
+        'ATLKDKLIGHLATSQEPRSYNKITVVGVGAVGMACAISILMKDLADEVALVDVMEDKLKGEMMDLQHGSLFLHTAKIVSGKDYSVSAGSKLVVITAGARQQEGESRLNLVQRNVNIFKFIIPNIVKHSPDCIILVVSNPVDVLTYVAWKLSGLPMHRIIGSG',
+    ]
+    sequences = list(map(Protein,Y))
 
     for i,seq in enumerate(sequences):
         seq.metadata['id'] = i
-    msa_aligner = DnaMSA(sequences)
+
+    msa_aligner = ProteinMSA(sequences)
     result = msa_aligner.progressive_msa()
-    pairwise_combinations= itertools.combinations(result, 2)
-    for i, pair in enumerate(pairwise_combinations):
-        if i==1:
-            print(pair[0][3])
-            print(pair[1][3])
-            break
+    print(sum_pairs_score(result, 'blossum62'))
+
