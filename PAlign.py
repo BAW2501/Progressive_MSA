@@ -9,7 +9,9 @@ from pathlib import Path
 from skbio import TreeNode, DNA, RNA, Protein, io, DistanceMatrix
 from skbio.alignment import global_pairwise_align_nucleotide, global_pairwise_align_protein
 from skbio.sequence.distance import kmer_distance
+from skbio.sequence.distance import hamming
 from sklearn.manifold import MDS
+import blosum as bl
 
 warnings.filterwarnings('ignore', message="You're using skbio's python implementation of Needleman-Wunsch ")
 
@@ -109,6 +111,7 @@ class DnaMSA:
         Embed sequences using sklearn manifold MDS.
         '''
         distance_matrix = DistanceMatrix.from_iterable(self.sequences, metric=functools.partial(kmer_distance, k=8), key='id')
+        distance_matrix = DistanceMatrix.from_iterable(self.sequences, metric=hamming ,key='id')
         embedder = MDS(n_components=2, dissimilarity='precomputed', max_iter=3000, eps=1e-9, n_jobs=-1)
         embedded = embedder.fit(distance_matrix.data)
         return embedded.embedding_
@@ -146,7 +149,7 @@ class ProteinMSA(DnaMSA):
     def __init__(self, sequences, clustering_algo='Aglo') -> None:
         super().__init__(sequences, clustering_algo)
         self.alphabet = list('ACDEFGHIKLMNPQRSTVWY')
-        self.pair_aligner = global_pairwise_align_protein
+        self.pair_aligner = partial(global_pairwise_align_protein, penalize_terminal_gaps=True)
 
 
 class SequenceFactory:
