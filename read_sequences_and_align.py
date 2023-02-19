@@ -8,6 +8,7 @@ from skbio.alignment import global_pairwise_align_protein
 from tqdm import tqdm
 import skbio.io
 
+from PAlign import *
 # read file that contains the filenames for the familes
 def read_ids():
     # first argument is the id file that contains all the file name of the dataset (one of OXbench datasets)
@@ -33,8 +34,8 @@ def read_families(families, sequence_constructor=None):
         for i, seq in enumerate(sequences):
             seq.metadata['id'] = i
             msa_aligner = ProteinMSA(sequences)
-            result = msa_aligner.progressive_msa()
-            result.write()
+        result = msa_aligner.progressive_msa(preprocess='one_hot')
+        result.write('output\\'+family+'.fa', format='fasta')
 
 
 def align_families():
