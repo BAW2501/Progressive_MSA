@@ -4,6 +4,7 @@ import sys
 import itertools
 
 from functools import partial
+import pandas as pd
 import blosum as bl
 from skbio import TabularMSA, Protein
 from tqdm import tqdm
@@ -45,8 +46,11 @@ def compute_score_pairwise_alignment(seq1, seq2, score_matrix_dict):
         if(residue2=='-'):
             residue2='*'
 
-        # add cost of substuting residue 1 with 2
-        score+=score_matrix_dict[residue1+residue2]
+        if(residue1=='*' and residue2=='*'):
+            score-=1
+        else:
+            # add cost of substuting residue 1 with 2
+            score+=score_matrix_dict[residue1+residue2]
     return score
 
 def sum_pairs_score(msa, scoringMatrix):
@@ -55,14 +59,26 @@ def sum_pairs_score(msa, scoringMatrix):
     match= re.search("blossum(.*)", scoringMatrix).group(1)
     score_matrix_dict=bl.BLOSUM(int(match))
     pairwise_combinations = itertools.combinations(msa, 2)
-    
+
     for pair in pairwise_combinations:
         score+= compute_score_pairwise_alignment(pair[0], pair[1], score_matrix_dict)
 
     return score
 
-## TODO test sum_pairs_score function
-## TODO implement circular sum
+def circular_sum_score(msa, scoringMatrix):
+    score=0
+    match = re.search("blossum(.*)", scoringMatrix).group(1)
+    score_matrix_dict = bl.BLOSUM(int(match))
+    #print(score_matrix_dict)
+    for i in range(len(msa)-1):
+        #print(i,'->',i+1)
+        score+=compute_score_pairwise_alignment(msa[i], msa[i+1], score_matrix_dict)
+
+    # since cirular sum needs to be a loop between sequences, close the loop
+    #print(len(msa)-1,'->',0)
+    score+= compute_score_pairwise_alignment(msa[len(msa)-1],msa[0],score_matrix_dict)
+    return score
+
 ## TODO implement column score
 
 
@@ -70,15 +86,32 @@ def read_alignments(families, func):
     #read the fasta files for each family
     directory= sys.argv[2]
     print(families)
+    dictionary={'Number of sequences':[], 'Sum of pairs':[], 'Circular sum':[]}
     for family in tqdm(families):
-        MSA = TabularMSA.read(directory+'\\'+family, constructor=partial(Protein, lowercase=True))
+        MSA = TabularMSA.read(directory+'\\'+family+'.fa', constructor=partial(Protein, lowercase=True))
         MSA.reassign_index(minter='id')
-        
-        positional_conservation = MSA.conservation(metric='inverse_shannon_uncertainty', degenerate_mode='nan', gap_mode='include')
-        print(positional_conservation)
-        func(MSA)
+        dictionary['Number of sequences'].append(len(MSA))
+        dictionary['Sum of pairs'].append(sum_pairs_score(MSA,'blossum50'))
+        dictionary['Circular sum'].append(circular_sum_score(MSA, 'blossum50'))
+
+    df=pd.DataFrame(data= dictionary, index=families)
+    df.to_csv('./onehot.csv')
+        #positional_conservation = MSA.conservation(metric='inverse_shannon_uncertainty', degenerate_mode='nan', gap_mode='include')
+        #print(positional_conservation)
+        #func(MSA)
 
 
+def read_one():
+    #read the fasta files for each family
+    file= sys.argv[2]
+    MSA= TabularMSA.read(file, constructor=partial(Protein, lowercase=True))
+    #MSA.reassign_index(minter='id')
+    dictionary = {'Number of sequences': [], 'Sum of pairs': [], 'Circular sum': []}
+    dictionary['Number of sequences'].append(len(MSA))
+    dictionary['Sum of pairs'].append(sum_pairs_score(MSA, 'blossum50'))
+    dictionary['Circular sum'].append(circular_sum_score(MSA, 'blossum50'))
+    df = pd.DataFrame(data=dictionary, index=[file])
+    df.to_csv('C:\\Users\\Oussama\\Desktop\\clustal_output\\22t58.csv')
 
 #read_alignments(read_ids(),stub_func)
 
@@ -106,12 +139,14 @@ if __name__ == '__main__':
         'TALKDKLIGHLATSQEPRSYNKITVVGCDAVGMADAISVLMKDLADEVALVDVMEDKLKGEMMDLEHGSLFLHTAKIVSGKDYSVSAGSKLVVITAGARQQEGESRLNLVQRNVNIFKFIIPNIVKHSPDCLKELHPELGTDKNKQDWKLSGLPMHRIIGSG',
         'ATLKDKLIGHLATSQEPRSYNKITVVGVGAVGMACAISILMKDLADEVALVDVMEDKLKGEMMDLQHGSLFLHTAKIVSGKDYSVSAGSKLVVITAGARQQEGESRLNLVQRNVNIFKFIIPNIVKHSPDCIILVVSNPVDVLTYVAWKLSGLPMHRIIGSG',
     ]
-    sequences = list(map(Protein,Y))
+    #sequences = list(map(Protein,Y))
 
-    for i,seq in enumerate(sequences):
-        seq.metadata['id'] = i
+    #for i,seq in enumerate(sequences):
+        #seq.metadata['id'] = i
 
-    msa_aligner = ProteinMSA(sequences)
-    result = msa_aligner.progressive_msa()
-    print(sum_pairs_score(result, 'blossum62'))
+    #msa_aligner = ProteinMSA(sequences)
+    #result = msa_aligner.progressive_msa()
+    #print(circular_sum_score(result, 'blossum62'))
 
+    #read_alignments(read_ids(),stub_func)
+    read_one()
