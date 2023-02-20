@@ -103,7 +103,7 @@ def read_alignments(families, func):
 
 def read_one():
     #read the fasta files for each family
-    file= sys.argv[2]
+    file= sys.argv[1]
     MSA= TabularMSA.read(file, constructor=partial(Protein, lowercase=True))
     #MSA.reassign_index(minter='id')
     dictionary = {'Number of sequences': [], 'Sum of pairs': [], 'Circular sum': []}
@@ -111,7 +111,7 @@ def read_one():
     dictionary['Sum of pairs'].append(sum_pairs_score(MSA, 'blossum50'))
     dictionary['Circular sum'].append(circular_sum_score(MSA, 'blossum50'))
     df = pd.DataFrame(data=dictionary, index=[file])
-    df.to_csv('C:\\Users\\Oussama\\Desktop\\clustal_output\\22t58.csv')
+    df.to_csv(sys.argv[2])
 
 #read_alignments(read_ids(),stub_func)
 
