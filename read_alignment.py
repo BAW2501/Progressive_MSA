@@ -13,21 +13,19 @@ from PAlign import *
 
 # read file that contains the filenames for the familes
 def read_ids():
-    # first argument is the id file that contains all the file name of the dataset (one of OXbench datasets)
-    fn = sys.argv[1]
-    if os.path.exists(fn):
-
-        # each file specifies sequences of a family which will be msad together    
-        families=[]
-
-        ox_id_file = open(fn, 'r')
-        Lines = ox_id_file.readlines()
-        for line in Lines:
-            families.append(line.strip())
-        
-        ox_id_file.close()
-    
-    return families
+    # First argument is the ID file that contains all the file names of the dataset (one of OXbench datasets)
+    try:
+        fn = sys.argv[1]
+        with open(fn, 'r') as f:
+            # Read the lines of the file and strip any whitespace
+            # Return the list of lines as the result
+            return [line.strip() for line in f.readlines()]
+    except IndexError:
+        print("Missing input file argument")
+    except FileNotFoundError:
+        print(f"File not found: {fn}")
+    except PermissionError:
+        print(f"Permission denied: {fn}")
 
 # replace this stub with accuracy measures
 def stub_func(string):
@@ -35,6 +33,8 @@ def stub_func(string):
 
 def compute_score_pairwise_alignment(seq1, seq2, score_matrix_dict):
     score=0
+    # tuple unpacking to get the residues like
+    # for residue1, residue2 in zip(seq1, seq2): no need to use list()
     for residue_pair in list(zip(seq1, seq2)):
         residue1=residue_pair[0].__str__()
         residue2=residue_pair[1].__str__()
@@ -54,26 +54,25 @@ def compute_score_pairwise_alignment(seq1, seq2, score_matrix_dict):
     return score
 
 def sum_pairs_score(msa, scoringMatrix):
-    score=0
     #get number of blossum matrix
-    match= re.search("blossum(.*)", scoringMatrix).group(1)
+    if not scoringMatrix.startswith('BLOSUM'):
+        raise ValueError('Unsupported scoring matrix')
+    match = re.search("blossum(.*)", scoringMatrix)[1]
     score_matrix_dict=bl.BLOSUM(int(match))
     pairwise_combinations = itertools.combinations(msa, 2)
 
-    for pair in pairwise_combinations:
-        score+= compute_score_pairwise_alignment(pair[0], pair[1], score_matrix_dict)
-
-    return score
+    return sum(
+        compute_score_pairwise_alignment(i, j, score_matrix_dict)for i,j in pairwise_combinations
+    )
 
 def circular_sum_score(msa, scoringMatrix):
-    score=0
-    match = re.search("blossum(.*)", scoringMatrix).group(1)
+    if not scoringMatrix.startswith('BLOSUM'):
+        raise ValueError('Unsupported scoring matrix')
+    match = re.search("blossum(.*)", scoringMatrix)[1]
     score_matrix_dict = bl.BLOSUM(int(match))
-    #print(score_matrix_dict)
-    for i in range(len(msa)-1):
-        #print(i,'->',i+1)
-        score+=compute_score_pairwise_alignment(msa[i], msa[i+1], score_matrix_dict)
-
+    score = sum(
+        compute_score_pairwise_alignment(msa[i], msa[i + 1], score_matrix_dict) for i in range(len(msa) - 1)
+    )
     # since cirular sum needs to be a loop between sequences, close the loop
     #print(len(msa)-1,'->',0)
     score+= compute_score_pairwise_alignment(msa[len(msa)-1],msa[0],score_matrix_dict)
